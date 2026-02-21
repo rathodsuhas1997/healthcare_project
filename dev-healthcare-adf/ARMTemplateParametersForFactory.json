@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "dev-healthcare-adf"
+		},
+		"LS_ADB_NOTEBOOK_accessToken": {
+			"value": ""
+		},
+		"LS_HEALTHCARE_SINK_ADLS_JSON_accountKey": {
+			"value": ""
+		},
+		"LS_HEALTHCARE_SQL_CONFIG_password": {
+			"value": ""
+		},
+		"LS_ADB_NOTEBOOK_properties_typeProperties_existingClusterId": {
+			"value": "0217-181607-x0d89n03"
+		},
+		"LS_HEALTHCARE_API_SOURCE_properties_typeProperties_url": {
+			"value": "https://r4.smarthealthit.org/"
+		},
+		"LS_HEALTHCARE_SINK_ADLS_JSON_properties_typeProperties_url": {
+			"value": "https://devhealthcarestorage12.dfs.core.windows.net/"
+		},
+		"LS_HEALTHCARE_SQL_CONFIG_properties_typeProperties_server": {
+			"value": "dev-healthcare-sql-server.database.windows.net"
+		},
+		"LS_HEALTHCARE_SQL_CONFIG_properties_typeProperties_database": {
+			"value": "dev_healthcare_sql_database"
+		},
+		"LS_HEALTHCARE_SQL_CONFIG_properties_typeProperties_userName": {
+			"value": "suhas"
+		}
+	}
+}
