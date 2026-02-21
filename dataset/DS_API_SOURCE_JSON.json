@@ -1,0 +1,27 @@
+{
+	"name": "DS_API_SOURCE_JSON",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_HEALTHCARE_API_SOURCE",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"resource": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "HttpServerLocation",
+				"relativeUrl": {
+					"value": "@dataset().resource",
+					"type": "Expression"
+				}
+			}
+		},
+		"schema": {}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

@@ -1,0 +1,13 @@
+{
+	"name": "DS_HEALTHCARE_SQL_CONFIG",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_HEALTHCARE_SQL_CONFIG",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

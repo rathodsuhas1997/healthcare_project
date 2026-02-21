@@ -1,0 +1,41 @@
+{
+	"name": "DS_HEALTHCARE_SINK_ADLS_JSON",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_HEALTHCARE_SINK_ADLS_JSON",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"ContainerName": {
+				"type": "string"
+			},
+			"SinkFolder": {
+				"type": "string"
+			},
+			"SinkFileName": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@dataset().SinkFileName",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@concat(dataset().SinkFolder,'/',formatDateTime(utcNow(),'yyyy'))",
+					"type": "Expression"
+				},
+				"fileSystem": {
+					"value": "@dataset().ContainerName",
+					"type": "Expression"
+				}
+			}
+		},
+		"schema": {}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

@@ -1,0 +1,17 @@
+{
+	"name": "LS_HEALTHCARE_SQL_CONFIG",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "AzureSqlDatabase",
+		"typeProperties": {
+			"server": "dev-healthcare-sql-server.database.windows.net",
+			"database": "dev_healthcare_sql_database",
+			"encrypt": "mandatory",
+			"trustServerCertificate": true,
+			"authenticationType": "SQL",
+			"userName": "suhas",
+			"encryptedCredential": "ew0KICAiVmVyc2lvbiI6ICIyMDE3LTExLTMwIiwNCiAgIlByb3RlY3Rpb25Nb2RlIjogIktleSIsDQogICJTZWNyZXRDb250ZW50VHlwZSI6ICJQbGFpbnRleHQiLA0KICAiQ3JlZGVudGlhbElkIjogIkRBVEFGQUNUT1JZQEU4QURFMUY4LUM4M0EtNDVCRi1BNzFDLUVGOEUyQ0Q4QkVGNF81YTRjY2E0Zi01OTg2LTRhOTgtODNiNy02YjIyNDJlYzJmNmUiDQp9"
+		}
+	}
+}

@@ -1,0 +1,349 @@
+{
+	"name": "API_Master_PL",
+	"properties": {
+		"activities": [
+			{
+				"name": "Lookup Pipeline Run Logs",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "select is_last_run_completed from [healthcare].[pipeline_run_status]\nwhere [pipeline_name] = 'API_Master_PL'",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_HEALTHCARE_SQL_CONFIG",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": true
+				}
+			},
+			{
+				"name": "Check Pipeline last run completed 1 or not",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Lookup Pipeline Run Logs",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(activity('Lookup Pipeline Run Logs').output.firstRow['is_last_run_completed'],1)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Set MasterPipelineRunID",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Set Pipeline Start Time",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "masterPipelineRunID",
+								"value": {
+									"value": "@pipeline().RunId",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Update is_last_run_completed to 0",
+							"type": "Script",
+							"dependsOn": [
+								{
+									"activity": "Set Pipeline Start Time",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"linkedServiceName": {
+								"referenceName": "LS_HEALTHCARE_SQL_CONFIG",
+								"type": "LinkedServiceReference"
+							},
+							"typeProperties": {
+								"scripts": [
+									{
+										"type": "Query",
+										"text": {
+											"value": "UPDATE [healthcare].[pipeline_run_status] SET [is_last_run_completed] = 0, [added_by] = '@{variables('masterPipelineRunID')}' WHERE [pipeline_name] = 'API_Master_PL'",
+											"type": "Expression"
+										}
+									}
+								],
+								"scriptBlockExecutionTimeout": "02:00:00"
+							}
+						},
+						{
+							"name": "Execute Ingestion Pipeline",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "Update is_last_run_completed to 0",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Set MasterPipelineRunID",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "Ingestion Pipeline",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true
+							}
+						},
+						{
+							"name": "Execute Load_JSON_To_Bronze",
+							"type": "DatabricksNotebook",
+							"dependsOn": [
+								{
+									"activity": "Execute Ingestion Pipeline",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/Users/suhasrathod08@gmail.com/Healthcare/Load_JSON_To_Bronze",
+								"baseParameters": {
+									"masterPipelineRunID": {
+										"value": "@variables('masterPipelineRunID')",
+										"type": "Expression"
+									},
+									"FileName": {
+										"value": "{\n  \"baseParameters\": {\n    \"FileName\": \"@concat('Patient_', formatDateTime(utcNow(), 'yyyyMMdd_HHmmss'), '.json')\"\n  }\n}\n",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_ADB_NOTEBOOK",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Update is_last_run_completed to 1",
+							"type": "Script",
+							"dependsOn": [
+								{
+									"activity": "Update Current Checkpoint",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"linkedServiceName": {
+								"referenceName": "LS_HEALTHCARE_SQL_CONFIG",
+								"type": "LinkedServiceReference"
+							},
+							"typeProperties": {
+								"scripts": [
+									{
+										"type": "Query",
+										"text": {
+											"value": "UPDATE [healthcare].[pipeline_run_status] SET [is_last_run_completed] = 1, [added_by] = '@{variables('masterPipelineRunID')}' WHERE [pipeline_name] = 'API_Master_PL'",
+											"type": "Expression"
+										}
+									}
+								],
+								"scriptBlockExecutionTimeout": "02:00:00"
+							}
+						},
+						{
+							"name": "Set Pipeline Start Time",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "pipelineStartTime",
+								"value": {
+									"value": "@utcNow()",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Execute Bronze To Silver",
+							"type": "DatabricksNotebook",
+							"dependsOn": [
+								{
+									"activity": "Execute Load_JSON_To_Bronze",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/Users/suhasrathod08@gmail.com/Healthcare/Bronze_To_Silver_Healthcare",
+								"baseParameters": {
+									"masterPipelineRunID": {
+										"value": "@variables('masterPipelineRunID')",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_ADB_NOTEBOOK",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Execute Silver To Gold",
+							"type": "DatabricksNotebook",
+							"dependsOn": [
+								{
+									"activity": "Execute Bronze To Silver",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/Users/suhasrathod08@gmail.com/Healthcare/Silver_To_Gold_Healthcare",
+								"baseParameters": {
+									"masterPipelineRunID": {
+										"value": "@variables('masterPipelineRunID')",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_ADB_NOTEBOOK",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Update Current Checkpoint",
+							"type": "Script",
+							"dependsOn": [
+								{
+									"activity": "Execute Silver To Gold",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"linkedServiceName": {
+								"referenceName": "LS_HEALTHCARE_SQL_CONFIG",
+								"type": "LinkedServiceReference"
+							},
+							"typeProperties": {
+								"scripts": [
+									{
+										"type": "Query",
+										"text": {
+											"value": "UPDATE healthcare.api_config_table SET PREVIOUSCHECKPOINT=CURRENTCHECKPOINT, CURRENTCHECKPOINT='@{formatDateTime(variables('pipelineStartTime'),'yyyy-MM-ddTHH:mm:ss')}', Added_By='@{variables('masterPipelineRunID')}'",
+											"type": "Expression"
+										}
+									}
+								],
+								"scriptBlockExecutionTimeout": "02:00:00"
+							}
+						}
+					]
+				}
+			}
+		],
+		"variables": {
+			"masterPipelineRunID": {
+				"type": "String"
+			},
+			"pipelineStartTime": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-02-21T08:13:59Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
